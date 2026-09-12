@@ -217,7 +217,10 @@ const SECTIONS = [
 const TOTAL = SECTIONS.reduce((a,s)=>a+s.codes.length,0);
 
 /* ---------- Состояние ---------- */
-const KEY = "panini-wc2026-v1";
+/* Ключ хранения в браузере. ОБЯЗАТЕЛЬНО свой у каждой копии: страницы на
+   одном домене (github.io) делят память браузера, и при одинаковом ключе
+   вторая копия покажет чужую коллекцию. */
+const KEY = "panini-wc2026-v1-" + ROOM_ID;
 let state = load();               // {code: копий}  (1 = есть, >=2 = есть + (n-1) дублей)
 let filter = "all";
 let query = "";
@@ -579,11 +582,8 @@ function fbInit(){
         const remote = snap.val();
         if(first){
           first = false;
-          // если общая база пустая, а локально уже что-то отмечено — засеваем её
-          if((!remote || !Object.keys(remote).length) && Object.keys(state).length){
-            try{ FB.stickers.set(state); }catch(e){}
-            return;
-          }
+          // Общая база — единственный источник правды. Локальные отметки в неё
+          // НЕ засеваем: иначе коллекция из памяти браузера затрёт чужую комнату.
         }
         state = remote || {};
         save();
