@@ -364,13 +364,19 @@ function renderStats(){
                    `— ${t.have} из ${t.total} наклеек`;
   content.appendChild(head);
 
-  const rows = SECTIONS
-    .filter(s => s.code !== "FWC")                 // только сборные
+  // Спецблестящие (оба FWC-раздела) — одной строкой и всегда первыми
+  const fwcCodes = SECTIONS.filter(s => s.code === "FWC").flatMap(s => s.codes);
+  const fwcHave  = fwcCodes.filter(it => has(it.code)).length;
+  const fwcRow   = { name:"Спецблестящие (FWC)", have:fwcHave, total:fwcCodes.length,
+                     pct: fwcCodes.length ? fwcHave/fwcCodes.length : 0 };
+
+  const rows = [fwcRow].concat(SECTIONS
+    .filter(s => s.code !== "FWC")                 // дальше сборные
     .map(s => {
       const have = s.codes.filter(it=>has(it.code)).length;
       return { name:s.name, have, total:s.codes.length, pct: have/s.codes.length };
     })
-    .sort((a,b) => b.pct - a.pct || b.have - a.have || a.name.localeCompare(b.name,"ru"));
+    .sort((a,b) => b.pct - a.pct || b.have - a.have || a.name.localeCompare(b.name,"ru")));
 
   const wrap = document.createElement("div");
   wrap.className = "stats";
