@@ -246,8 +246,9 @@ function setVal(c, v){
   save();
   fbWrite(c, v);
 }
+let pending = {};            // отметки, сделанные до подключения к базе
 function fbWrite(code, v){
-  if(!FB) return;
+  if(!FB){ pending[code] = v; return; }   // не теряем: допишем сразу после входа
   try{
     if(v<=0) FB.stickers.child(code).remove();
     else     FB.stickers.child(code).set(v);
@@ -592,8 +593,19 @@ function fbInit(){
         const remote = snap.val();
         if(first){
           first = false;
-          // Общая база — единственный источник правды. Локальные отметки в неё
-          // НЕ засеваем: иначе коллекция из памяти браузера затрёт чужую комнату.
+          // Общая база — единственный источник правды: коллекцию из памяти
+          // браузера в неё НЕ засеваем, иначе затрём чужую комнату.
+          state = remote || {};
+          // Но отметки, сделанные пока шло подключение, сохраняем.
+          Object.keys(pending).forEach(c => {
+            const v = pending[c];
+            if(v <= 0){ delete state[c]; FB.stickers.child(c).remove(); }
+            else      { state[c] = v;    FB.stickers.child(c).set(v);   }
+          });
+          pending = {};
+          save();
+          render();
+          return;
         }
         state = remote || {};
         save();
